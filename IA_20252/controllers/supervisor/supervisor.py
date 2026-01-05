@@ -1,3 +1,4 @@
+from platform import node
 from controller import Supervisor
 import random
 import math
@@ -107,63 +108,114 @@ spawned_count = 0
 failed_spawns = 0
 max_attempts = 100
 
-for i in range(n_objects):
-    tries = 0
-    success = False
-    
-    while tries < max_attempts:
-        tries += 1
-        pos = random_pos()
-        if is_far_enough(pos):
-            success = True
-            break
-    
-    if not success:
-        print(f"Warning: Could not find valid position for object {i} after {max_attempts} attempts")
-        failed_spawns += 1
-        continue
-    
-    positions.append(pos)
-    shape_type = random.choice(shapes)
-    color = random.choice(colors)
-    
-    if shape_type == "cube":
-        geometry = f"Box {{ size {size} {size} {size} }}"
-        bounding = f"Box {{ size {size} {size} {size} }}"
-    
-    # Node string
-    node_string = f"""
-    Solid {{
-      translation {pos[0]} {pos[1]} {pos[2]}
-      name "{shape_type}_{i}"
-      children [
-        Shape {{
-          appearance PBRAppearance {{
-            baseColor {color[0]} {color[1]} {color[2]}
-            roughness 0.8
-            metalness 0
-          }}
-          geometry {geometry}
+def spawn_objects():
+    global spawned_count, failed_spawns
+    for i in range(n_objects):
+        tries = 0
+        success = False
+        
+        while tries < max_attempts:
+            tries += 1
+            pos = random_pos()
+            if is_far_enough(pos):
+                success = True
+                break
+        
+        if not success:
+            print(f"Warning: Could not find valid position for object {i} after {max_attempts} attempts")
+            failed_spawns += 1
+            continue
+        
+        positions.append(pos)
+        shape_type = random.choice(shapes)
+        color = random.choice(colors)
+        
+        if shape_type == "cube":
+            geometry = f"Box {{ size {size} {size} {size} }}"
+            bounding = f"Box {{ size {size} {size} {size} }}"
+        
+        # Node string
+        node_string = f"""
+        Solid {{
+        translation {pos[0]} {pos[1]} {pos[2]}
+        name "{shape_type}_{i}"
+        children [
+            Shape {{
+            appearance PBRAppearance {{
+                baseColor {color[0]} {color[1]} {color[2]}
+                roughness 0.8
+                metalness 0
+            }}
+            geometry {geometry}
+            }}
+        ]
+        boundingObject {bounding}
+        physics Physics {{
+            density -1
+            mass {mass}
         }}
-      ]
-      boundingObject {bounding}
-      physics Physics {{
-        density -1
-        mass {mass}
-      }}
-      recognitionColors [ {color[0]} {color[1]} {color[2]} ]
-    }}
-    """
-    root_children.importMFNodeFromString(-1, node_string)
-    spawned_count += 1
+        recognitionColors [ {color[0]} {color[1]} {color[2]} ]
+        }}
+        """
+        root_children.importMFNodeFromString(-1, node_string)
+        spawned_count += 1
 
 print(f"Spawn complete. The supervisor has spawned {spawned_count}/{n_objects} objects ({failed_spawns} failed).")
-#print("Initializing physics...")
+
+def teleport_youbot():
+    youbot_node = None
+    for n in range(root_children.getCount()):
+        node = root_children.getMFNode(n)
+        if node.getTypeName() == "Youbot":
+            youbot_node = node
+    
+    def random_pos():
+        return [
+            random.uniform(-3.85, 1.45),
+            random.uniform(-1.54, 1.54),
+            0.102
+        ]
+    
+    def is_far_enough(pos):
+        for q in positions:
+            dx, dy = pos[0] - q[0], pos[1] - q[1]
+            if math.hypot(dx, dy) < 0.4:
+                return False
+        
+        for obs in existing_obstacles:
+            dx, dy = pos[0] - obs['x'], pos[1] - obs['y']
+            if math.hypot(dx, dy) < (obs['radius'] + 0.4):
+                return False
+    
+        return True
+
+    tf = youbot_node.getField("translation")
+    rf = youbot_node.getField("rotation")
+
+    generations = 20
+    samples = 20
+    for i in range(generations):
+        tf.setSFVec3f([-4, 0, 0.102])
+        rf.setSFRotation([0, 0, 1, 0])
+        supervisor.step(200)
+        for j in range(samples):
+            sucess = False
+            pos = None
+            while not sucess:
+                pos = random_pos()
+                if is_far_enough(pos):
+                    success = True
+                    break
+
+            tf.setSFVec3f(list(pos))
+            rf.setSFRotation([0, 0, 1, random.uniform(-3.14, 3.14)])
+
+            supervisor.step(200)
+        delete_existing_objects()
+        spawn_objects()
+
+#teleport_youbot()
 
 for _ in range(20):
     supervisor.step(timestep)
 
-#print("Supervisor ready.")
-
-#while supervisor.step(timestep) != -1:
-    #pass

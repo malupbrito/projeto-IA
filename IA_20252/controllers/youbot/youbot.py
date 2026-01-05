@@ -226,6 +226,19 @@ class YouBotController:
 
     # --- Loop Principal ---
     def run(self):
+        def get_pictures():
+            generations = 20
+            samples = 20
+            for gen in range(generations):
+                self.robot.step(200)  # Wait for 200 ms at start of generation
+                for samp in range(samples):
+                    self.robot.step(200)
+                    filename = f"pictures/pic_gen{gen}_sample{samp}.png"
+                    self.camera.saveImage(filename, 100)
+                    print(f"Saved image: {filename}")
+
+        # get_pictures() # Usar em conjunto com supervisor.py para capturar imagens
+
         while self.robot.step(self.time_step) != -1:
             
             # --- ESTADO: PROCURANDO CUBO ---

@@ -1,0 +1,7 @@
+
+path: /content/dataset
+train: images/train
+val: images/val
+
+nc: 7
+names: ['red_cube', 'green_cube', 'blue_cube', 'red_basket', 'green_basket', 'blue_basket', 'obstacle']
