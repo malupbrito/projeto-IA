@@ -5,6 +5,8 @@ from base import Base
 from arm import Arm
 from gripper import Gripper
 from fuzzy_logic import trapezoidal, triangular, AND, defuzzify
+from ultralytics import YOLO
+import numpy as np
 
 class Estado(Enum):
     PROCURANDO_CUBO = auto()
@@ -29,6 +31,8 @@ class YouBotController:
         self.display = self.robot.getDevice("display")
 
         self.display.attachCamera(self.camera)
+
+        self.yolo_model = YOLO("best.pt")
 
         self.lidar = self.robot.getDevice("lidar")
         self.lidar.enable(self.time_step)
@@ -230,9 +234,18 @@ class YouBotController:
             fw["leve_direita"] = 0.8
 
         return defuzzify(fv, self.v_values), defuzzify(fw, self.w_values)
+    def bgra_bytes_to_bgr(self, bgra_bytes, width, height):
+        # BGRA = 4 channels
+        bgra = np.frombuffer(bgra_bytes, dtype=np.uint8)
+        bgra = bgra.reshape((height, width, 4))
 
+        # Drop alpha channel → BGR
+        bgr = bgra[:, :, :3]
+
+        return bgr
     # --- Loop Principal ---
     def run(self):
+        
         def get_pictures():
             generations = 20
             samples = 20
@@ -245,9 +258,33 @@ class YouBotController:
                     print(f"Saved image: {filename}")
 
         # get_pictures() # Usar em conjunto com supervisor.py para capturar imagens
+        colors = [
+            0xF28D94,  # Light Red
+            0x94F2B8,  # Light Green
+            0x94C2F2,  # Light Blue
+            0xFF0000,  # Red
+            0x00FF00,  # Green
+            0x0000FF,  # Blue
+            0x8A6C46,  # Brown
+        ]
 
         while self.robot.step(self.time_step) != -1:
             
+            imageBuffer = self.camera.getImage()
+            img = self.bgra_bytes_to_bgr(imageBuffer, self.camera.getWidth(), self.camera.getHeight())
+            results = self.yolo_model(img, verbose=False, imgsz=128, conf=0.6)
+            
+            
+            self.display.setAlpha(0.0)
+            self.display.fillRectangle(0, 0, self.display.getWidth(), self.display.getHeight())
+            self.display.setAlpha(1.0)
+
+            for r in results[0].boxes:
+                self.display.setColor(colors[int(r.cls)])
+                box = (r.xyxy[0]*2).tolist()
+                self.display.drawRectangle(box[0], box[1], box[2]-box[0], box[3]-box[1])
+
+
             # --- ESTADO: PROCURANDO CUBO ---
             if self.estado_atual == Estado.PROCURANDO_CUBO:
                 dist_obs, cubo, caixa, eh_memoria = self.processar_sensores()
