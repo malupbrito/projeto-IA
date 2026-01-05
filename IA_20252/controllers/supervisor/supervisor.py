@@ -159,6 +159,7 @@ def spawn_objects():
         """
         root_children.importMFNodeFromString(-1, node_string)
         spawned_count += 1
+spawn_objects()
 
 print(f"Spawn complete. The supervisor has spawned {spawned_count}/{n_objects} objects ({failed_spawns} failed).")
 

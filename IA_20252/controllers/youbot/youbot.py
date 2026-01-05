@@ -22,6 +22,13 @@ class YouBotController:
         self.base = Base(self.robot)
         self.arm = Arm(self.robot)
         self.gripper = Gripper(self.robot)
+        
+        self.camera = self.robot.getDevice("camera")
+        self.camera.enable(self.time_step)
+
+        self.display = self.robot.getDevice("display")
+
+        self.display.attachCamera(self.camera)
 
         self.lidar = self.robot.getDevice("lidar")
         self.lidar.enable(self.time_step)
