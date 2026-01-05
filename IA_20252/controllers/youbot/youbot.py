@@ -4,7 +4,7 @@ from controller import Robot
 from base import Base
 from arm import Arm
 from gripper import Gripper
-from fuzzy_logic import trapezoidal, triangular, AND, defuzzify
+from fuzzy_logic import trapezoidal, triangular, AND, defuzzify, OR
 from ultralytics import YOLO
 import numpy as np
 
@@ -40,13 +40,14 @@ class YouBotController:
 
         self.estado_atual = Estado.PROCURANDO_CUBO
         self.timer_estado = 0
+        self.cubos_pegos = 0
 
         # Memória e Controle
         self.ultimo_cubo = None
         self.frames_sem_cubo = 0
         self.MAX_FRAMES_MEMORIA = 60
         self.cubo_travado = None
-        self.distancia_final_cubo = 0.14
+        self.distancia_final_cubo = 0.2
 
         self.dt = self.time_step / 1000.0
         self.VELOCIDADE_CEGA = 0.20
@@ -75,6 +76,18 @@ class YouBotController:
             "perto": trapezoidal(d, 0.0, 0.0, 0.25, 0.45),
             "medio": triangular(d, 0.40, 0.65, 0.90),
             "longe": trapezoidal(d, 0.80, 1.0, 1.0, 1.0)
+        }
+    
+    def fuzzy_erro_alinhamento(self, a):
+        if a is None:
+            return {
+                "alinhado": 0.0,
+                "desalinhado": 0.0
+            }
+        erro = abs(a)
+        return {
+            "alinhado": triangular(erro, 0.0, 0.0, 0.15),
+            "desalinhado": trapezoidal(erro, 0.10, 0.30, math.pi, math.pi)
         }
 
     # --- Percepção ---
@@ -112,6 +125,7 @@ class YouBotController:
 
         cubos = []
         obstaculos = []
+        caixas = []
 
         # 3. Classificação Geométrica
         for c in clusters:
@@ -133,16 +147,23 @@ class YouBotController:
             ang_span = max(angs) - min(angs)
 
             # Lógica de Identificação
-            if (2 <= len(c) <= 50 and 
+            if (2 <= len(c) <= 20 and 
                 0.05 < dist < 3 and 
                 ang_span < 0.15 and 
                 dispersao < 0.15):
                 cubos.append({"dist": dist, "ang": ang, "pts": len(c)})
+
+            elif (len(c) <= 120 and 
+                  dist < 3 and 
+                  dispersao < 0.25):
+                  caixas.append({"dist": dist, "ang": ang, "type": "caixa"})
+
             else:
                 obstaculos.append(dist)
 
         # 4. Persistência Temporal (Memória)
         cubo_detectado = min(cubos, key=lambda x: x["dist"]) if cubos else None
+        caixa_detectada = min(caixas, key=lambda x: x["dist"]) if caixas else None
 
         if cubo_detectado:
             self.ultimo_cubo = cubo_detectado
@@ -159,19 +180,21 @@ class YouBotController:
         dist_seguranca = min(obstaculos) if obstaculos else 2.0
         eh_memoria = (cubo_detectado is None) and (cubo_alvo is not None)
         
-        return dist_seguranca, cubo_alvo, None, eh_memoria
+        print(dist_seguranca, cubo_alvo, caixa_detectada, eh_memoria)
+
+        return dist_seguranca, cubo_alvo, caixa_detectada, eh_memoria
 
     # --- Regras Fuzzy: Procurar ---
     def inferencia_procurar(self, dist_alvo, ang_alvo, dist_obs):
         fo = self.fuzzy_obs(dist_obs)
+        fe = self.fuzzy_erro_alinhamento(ang_alvo)
         fv = {k: 0.0 for k in self.v_values}
         fw = {k: 0.0 for k in self.w_values}
 
-        # Prioridade 1: Colisão
-        if fo["perto"] > 0.0:
-            fv["parar"] = 1.0
-            fw["esquerda"] = 1.0
-            return defuzzify(fv, self.v_values), defuzzify(fw, self.w_values)
+     
+        fv["parar"] = fo["perto"]
+        fw["esquerda"] = fo["perto"]
+
 
         # Prioridade 2: Cubo Detectado
         if dist_alvo is not None and ang_alvo is not None:
@@ -182,25 +205,16 @@ class YouBotController:
             fw["direita"] = fa["direita"]
             fw["zero"] = fa["centro"]
 
-            alinhamento = max(fa["centro"], 0.2)
-            
-            # Ajuste fino de mira (freia se o ângulo for alto)
-            fator_mira = 0.1 if abs(ang_alvo) > 0.08 else 1.0
-            
-            # Freio de aproximação
-            fator_distancia = 1.0
-            if dist_alvo < 0.8: fator_distancia = 0.4
-            if dist_alvo < 0.5: fator_distancia = 0.2
+            # Anda rápido: longe + alinhado
+            fv["rapida"] = AND(fd["longe"], fe["alinhado"])
 
-            fv["rapida"] = min(fd["longe"], alinhamento) * 0.5 * fator_distancia * fator_mira
-            fv["media"]  = min(fd["medio"], alinhamento) * 0.5 * fator_distancia * fator_mira
-            fv["lenta"]  = fd["perto"]
+            # Velocidade média: médio + alinhado
+            fv["media"] = AND(fd["medio"], fe["alinhado"])
 
-            if dist_alvo < 0.12:
-                fv["parar"] = 1.0
-                fw["zero"] = 1.0
+            # Anda devagar: perto OU desalinhado
+            fv["lenta"] = OR(fd["perto"], fe["desalinhado"])
 
-            return defuzzify(fv, self.v_values), defuzzify(fw, self.w_values)
+    
 
         # Prioridade 3: Exploração
         fv["media"] = 0.6
@@ -213,25 +227,55 @@ class YouBotController:
 
     # --- Regras Fuzzy: Levar ---
     def inferencia_levar(self, dist_alvo, ang_alvo, dist_obs):
-        fd = self.fuzzy_dist(dist_alvo) if dist_alvo is not None else None
-        fa = self.fuzzy_ang(ang_alvo) if ang_alvo is not None else None
-        
+        fo = self.fuzzy_obs(dist_obs)
         fv = {k: 0.0 for k in self.v_values}
         fw = {k: 0.0 for k in self.w_values}
 
-        if fd and fa:
-            r_centro = fa["centro"]
-            # Direção à caixa
-            fv["media"] = max(fv["media"], AND(fd["longe"], r_centro))
-            fv["lenta"] = max(fv["lenta"], fd["perto"])
-            # Curvas
-            fw["leve_esquerda"] = max(fw["leve_esquerda"], fa["esquerda"])
-            fw["leve_direita"] = max(fw["leve_direita"], fa["direita"])
-            fw["zero"] = max(fw["zero"], r_centro)
-        else:
-            # Procura caixa
-            fv["parar"] = 1.0
-            fw["leve_direita"] = 0.8
+        # PRIORIDADE 1 — COLISÃO 
+        fv["parar"] = fo["perto"]
+        fw["esquerda"] = fo["perto"]
+
+        # PRIORIDADE 2 — APROXIMAR DA CAIXA
+        if dist_alvo is not None and ang_alvo is not None:
+            fd = self.fuzzy_dist(dist_alvo)
+            fa = self.fuzzy_ang(ang_alvo)
+
+            fw["esquerda"] = fa["esquerda"]
+            fw["direita"] = fa["direita"]
+            fw["zero"] = fa["centro"]
+
+            alinhamento = max(fa["centro"], 0.2)
+            fator_dist = 1.0
+            if dist_alvo < 0.8: fator_dist = 0.5 
+            
+            fv["rapida"] = min(fd["longe"], alinhamento) * 0.6 * fator_dist
+            fv["media"]  = min(fd["medio"], alinhamento) * 0.6 * fator_dist
+            fv["lenta"]  = fd["perto"]
+
+            if dist_alvo < 0.32: 
+                fv["parar"] = 1.0
+                fw["zero"] = 1.0
+
+            return defuzzify(fv, self.v_values), defuzzify(fw, self.w_values)
+
+        #  PRIORIDADE 3 — VARREDURA/EXPLORAÇÃO
+        fv["media"] = 0.6  
+        fw["zero"] = 1.0   
+
+        if fo["medio"] > 0:
+            fv["media"] *= (1 - fo["medio"]) 
+            fw["direita"] = fo["medio"]     
+
+
+        # Inibição por obstáculo (Passo 4.4)
+        fator_seg = 1.0 - fo["perto"]
+
+        fv["rapida"] *= fator_seg
+        fv["media"]  *= fator_seg
+        fv["lenta"]  *= fator_seg
+
+        fv["parar"] = max(fv["parar"], fo["perto"])
+
 
         return defuzzify(fv, self.v_values), defuzzify(fw, self.w_values)
     def bgra_bytes_to_bgr(self, bgra_bytes, width, height):
@@ -326,33 +370,29 @@ class YouBotController:
                 self.timer_estado += 1
                 self.base.move(0, 0, 0)
 
-                # Parâmetros Cinematica
-                OFFSET_BRACO = 0.18
-                Y_PRE_PEGA = max(0.20, min(0.32, self.distancia_final_cubo))
-                Y_PEGA_REAL = self.distancia_final_cubo + OFFSET_BRACO
-
-                # FASE 1: Posicionar braço em cima
-                if self.timer_estado < 40:
+                # 1. Prepara
+                if self.timer_estado == 1:
                     self.gripper.release()
-                    self.arm.inverse_kinematics(x=0.0, y=Y_PRE_PEGA, z=0.12)
+                    self.arm.set_orientation(Arm.FRONT)
+                    self.arm.set_height(Arm.FRONT_PLATE) 
                 
-                # FASE 2: Descer gradual
-                elif self.timer_estado < 80:
-                    z_descida = max(0.015, 0.12 - 0.002 * (self.timer_estado - 40)) 
-                    self.arm.inverse_kinematics(x=0.0, y=Y_PEGA_REAL, z=z_descida)
-                    if self.timer_estado > 70:
-                        self.gripper.set_gap(0.0) 
+                # 2. Desce (FRONT_FLOOR)
+                elif self.timer_estado == 20:
+                    print("--> Baixando braço")
+                    self.arm.set_height(Arm.FRONT_FLOOR) 
 
-                # FASE 3: Fechar Garra
-                elif self.timer_estado == 80:
+                # 3. Fecha a garra (AUMENTEI O TEMPO AQUI PARA DAR TEMPO DE DESCER)
+                elif self.timer_estado == 80: # Era 60, mudei para 80
+                    print("--> Fechando garra")
                     self.gripper.set_gap(0.0)
+                
+                # 4. Levanta
+                elif self.timer_estado == 120: # Era 100, ajustei proporcional
+                    print("--> Levantando")
+                    self.arm.set_height(Arm.RESET)
 
-                # FASE 4: Subir
-                elif self.timer_estado < 130:
-                    self.arm.inverse_kinematics(x=0.0, y=Y_PEGA_REAL - 0.02, z=0.18)
-
-                # FASE 5: Finalizar
-                else:
+                # 5. Sai
+                elif self.timer_estado > 160:
                     self.timer_estado = 0
                     self.estado_atual = Estado.LEVANDO_CAIXA
 
@@ -377,14 +417,26 @@ class YouBotController:
                 self.timer_estado += 1
 
                 if self.timer_estado == 20:
-                    self.arm.move_to_drop()
+                    # Leva o braço para trás, posição de soltar
+                    self.arm.set_orientation(Arm.BACK_RIGHT)
+                    self.arm.set_height(Arm.BACK_PLATE_LOW)
+
                 elif self.timer_estado == 60:
-                    self.gripper.open()
+                    self.gripper.release()
+                    self.cubos_pegos += 1
+                    if self.cubos_pegos >= 15:
+                        self.base.set_velocity(0.0, 0.0)
+                        self.arm.reset()
+                        print("FINALIZADO!")
+
                 elif self.timer_estado == 100:
-                    self.arm.move_to_compact()
+                    # Volta para posição inicial
+                    self.arm.reset()
+
                 elif self.timer_estado > 120:
                     self.estado_atual = Estado.PROCURANDO_CUBO
                     print("--> REINICIANDO")
+
 
 if __name__ == "__main__":
     c = YouBotController()
