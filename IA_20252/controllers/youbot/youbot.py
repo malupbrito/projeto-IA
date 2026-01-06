@@ -56,6 +56,26 @@ class YouBotController:
         self.v_values = {"parar": 0.0, "lenta": 0.10, "media": 0.20, "rapida": 0.35}
         self.w_values = {"direita": -1.0, "leve_direita": -0.5, "zero": 0.0, "leve_esquerda": 0.5, "esquerda": 1.0}
 
+        self.colors = [
+            0xF28D94,  # Light Red
+            0x94F2B8,  # Light Green
+            0x94C2F2,  # Light Blue
+            0xFF0000,  # Red
+            0x00FF00,  # Green
+            0x0000FF,  # Blue
+            0x8A6C46,  # Brown
+        ]
+
+        self.classes = [
+            "red_cube",
+            "green_cube",
+            "blue_cube",
+            "red_basket",
+            "green_basket",
+            "blue_basket",
+            "obstacle"
+        ]
+
     # --- Funções de Pertinência ---
     def fuzzy_dist(self, d):
         return {
@@ -287,47 +307,50 @@ class YouBotController:
         bgr = bgra[:, :, :3]
 
         return bgr
+    def get_pictures(self):
+        generations = 20
+        samples = 20
+        for gen in range(generations):
+            self.robot.step(200)  # Wait for 200 ms at start of generation
+            for samp in range(samples):
+                self.robot.step(200)
+                filename = f"pictures/pic_gen{gen}_sample{samp}.png"
+                self.camera.saveImage(filename, 100)
+                print(f"Saved image: {filename}")
+
+    def detect(self):
+        imageBuffer = self.camera.getImage()
+        img = self.bgra_bytes_to_bgr(imageBuffer, self.camera.getWidth(), self.camera.getHeight())
+        return self.yolo_model(img, verbose=False, imgsz=128, conf=0.3)
+
+    def display_overlays(self, results):
+        self.display.setAlpha(0.0)
+        self.display.fillRectangle(0, 0, self.display.getWidth(), self.display.getHeight())
+        self.display.setAlpha(1.0)
+
+        for r in results[0].boxes:
+            angulo = self.calcular_angulo_graus((r.xywhn[0].tolist()[0]), self.camera.getFov())
+            self.display.setColor(self.colors[int(r.cls)])
+            box = (r.xyxy[0]*2).tolist()
+            self.display.drawRectangle(box[0], box[1], box[2]-box[0], box[3]-box[1])
+            self.display.drawText(f"{self.classes[int(r.cls)]} {r.conf[0]:.2f} {angulo:.2f}°", box[0], box[1]-10)
+
+    def calcular_angulo_rad(self, x, fov):
+        return math.atan(math.tan(fov / 2) * (2 * x - 1))
+    
+    def calcular_angulo_graus(self, x, fov):
+        return math.degrees(self.calcular_angulo_rad(x, fov))
+        
+
     # --- Loop Principal ---
     def run(self):
-        
-        def get_pictures():
-            generations = 20
-            samples = 20
-            for gen in range(generations):
-                self.robot.step(200)  # Wait for 200 ms at start of generation
-                for samp in range(samples):
-                    self.robot.step(200)
-                    filename = f"pictures/pic_gen{gen}_sample{samp}.png"
-                    self.camera.saveImage(filename, 100)
-                    print(f"Saved image: {filename}")
-
         # get_pictures() # Usar em conjunto com supervisor.py para capturar imagens
-        colors = [
-            0xF28D94,  # Light Red
-            0x94F2B8,  # Light Green
-            0x94C2F2,  # Light Blue
-            0xFF0000,  # Red
-            0x00FF00,  # Green
-            0x0000FF,  # Blue
-            0x8A6C46,  # Brown
-        ]
 
         while self.robot.step(self.time_step) != -1:
             
-            imageBuffer = self.camera.getImage()
-            img = self.bgra_bytes_to_bgr(imageBuffer, self.camera.getWidth(), self.camera.getHeight())
-            results = self.yolo_model(img, verbose=False, imgsz=128, conf=0.6)
-            
-            
-            self.display.setAlpha(0.0)
-            self.display.fillRectangle(0, 0, self.display.getWidth(), self.display.getHeight())
-            self.display.setAlpha(1.0)
+            results = self.detect()
 
-            for r in results[0].boxes:
-                self.display.setColor(colors[int(r.cls)])
-                box = (r.xyxy[0]*2).tolist()
-                self.display.drawRectangle(box[0], box[1], box[2]-box[0], box[3]-box[1])
-
+            self.display_overlays(results)
 
             # --- ESTADO: PROCURANDO CUBO ---
             if self.estado_atual == Estado.PROCURANDO_CUBO:
