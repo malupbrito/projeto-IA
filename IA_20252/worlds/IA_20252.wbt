@@ -41,8 +41,8 @@ WorldInfo {
   ]
 }
 Viewpoint {
-  orientation -0.11429098437926981 0.12136533919056658 0.9860060980200763 1.5248723461255518
-  position -1.557390076535665 -12.376034255311456 3.209185451515832
+  orientation -0.5773502691896258 0.5773502691896258 0.5773502691896258 2.0944
+  position -0.7892744545741404 9.256964909661809e-06 12.848004280572361
   follow "youBot"
 }
 TexturedBackground {
@@ -89,30 +89,53 @@ PlasticFruitBox {
   color 1 0 0
 }
 Youbot {
-  hidden position_0_0 15.99454476418284
-  hidden position_0_1 -15.994563014171483
-  hidden position_0_2 -24.183727371165144
-  hidden position_0_3 24.183743418320994
-  hidden position_4_0 9.773827899354466e-07
-  hidden rotation_5 0 0 1 9.775888602052263e-07
-  hidden position_5_0 1.5700024580431733
-  hidden rotation_6 0 -1 0 1.5700024580431733
-  hidden position_6_0 -2.635001471135145
-  hidden rotation_7 0 1 0 2.635001471135145
-  hidden position_7_0 1.7800004213740304
-  hidden rotation_8 0 -1 0 1.7800004213740304
-  hidden position_8_0 9.355005569083256e-08
-  hidden rotation_9 0 0 0.9999999999999999 9.424321830774485e-08
-  hidden position_9_0 0.0068994264183324435
-  hidden position_9_1 9.999991571117287e-05
-  hidden translation_10 0 0.0068994264183324435 0.09
-  hidden translation_11 0 -9.999991571117287e-05 0.09
-  hidden rotation_12 0 0.9999999999999999 0 3.428174149823668
-  hidden rotation_13 0 -1 0 3.42819239981231
-  hidden rotation_14 0 1 0 0.9490138575532018
-  hidden rotation_15 0 -0.9999999999999999 0 0.9489978103973521
-  translation -3.9997416678060893 9.611435209954609e-06 0.10193777037854701
-  rotation -0.025943846332687856 0.9992896693161406 0.027332647795336666 0.0015898582485582092
+  hidden position_0_0 15.994544763329637
+  hidden position_0_1 -15.994563015024134
+  hidden position_0_2 -24.183727372177287
+  hidden position_0_3 24.18374341730918
+  hidden linearVelocity_0 -8.160111726759131e-11 6.9873919494770324e-09 2.0840518849216282e-11
+  hidden angularVelocity_0 -1.0071667340687342e-07 5.1369785687945474e-09 -7.890096100317729e-11
+  hidden position_4_0 1.9544500165816122e-06
+  hidden rotation_5 0 0 1 1.9544961967552004e-06
+  hidden position_5_0 1.570005092425883
+  hidden linearVelocity_5 -9.688897890086728e-08 1.7108579825826912e-07 -1.7032188020380656e-09
+  hidden angularVelocity_5 -8.529089630518413e-08 5.551469427495016e-09 9.772615822862316e-06
+  hidden rotation_6 0 -1 0 1.570005092425883
+  hidden position_6_0 -2.6350029471308294
+  hidden linearVelocity_6 2.9404665638982437e-07 -4.121943430516239e-07 2.0436494824458525e-09
+  hidden angularVelocity_6 -8.534060298252461e-08 5.556889162432057e-09 9.77245465786934e-06
+  hidden rotation_7 0 1 0 2.6350029471308294
+  hidden position_7_0 1.7800008443657513
+  hidden linearVelocity_7 -2.1869390252711975e-07 -6.051504164028587e-07 -2.3246558901020594e-09
+  hidden angularVelocity_7 -8.539004968274145e-08 5.56247278309737e-09 9.77246359058782e-06
+  hidden rotation_8 0 -1 0 1.7800008443657511
+  hidden position_8_0 5.315815322340886e-10
+  hidden linearVelocity_8 1.4431809645722862e-09 -1.676149049477307e-07 -6.496086972534154e-10
+  hidden angularVelocity_8 -8.541546252717301e-08 5.5633587557340815e-09 9.772435070540969e-06
+  hidden position_9_0 0.006899426430721938
+  hidden position_9_1 9.999990332396091e-05
+  hidden linearVelocity_9 1.8626187872580964e-09 -8.004934302236187e-07 -2.85551357681115e-10
+  hidden angularVelocity_9 5.075152098606848e-07 5.561386676617363e-09 9.087329791779314e-06
+  hidden translation_10 0 0.006899426430721938 0.09
+  hidden linearVelocity_10 -1.514325957551122e-07 -1.2119692670042625e-06 8.52765976352051e-09
+  hidden angularVelocity_10 5.075145564951556e-07 5.561456297892957e-09 9.087329230980651e-06
+  hidden translation_11 0 -9.999990332396091e-05 0.09
+  hidden linearVelocity_11 9.391472114132801e-08 -1.2119587164909602e-06 -5.174730185094253e-09
+  hidden angularVelocity_11 5.075145802651244e-07 5.561328279598275e-09 9.087329196436278e-06
+  hidden rotation_12 0 1 0 3.4281741489704642
+  hidden linearVelocity_12 -3.0406670855202353e-10 5.2887679692315835e-09 1.4477571923506574e-08
+  hidden angularVelocity_12 -1.0072014805799539e-07 -3.3891422767025603e-09 -7.844175469736385e-11
+  hidden rotation_13 0 -1 0 3.4281924006649613
+  hidden linearVelocity_13 -2.3561612896915125e-11 5.294263641836839e-09 -1.67077948988477e-08
+  hidden angularVelocity_13 -1.0071980487286856e-07 -3.3951423754852037e-09 -7.843063483749036e-11
+  hidden rotation_14 0 1 0 0.9490138565410587
+  hidden linearVelocity_14 -2.6934928331853985e-11 5.386702615552054e-09 1.6774802631387616e-08
+  hidden angularVelocity_14 -1.0072067671265425e-07 -4.9909217898990044e-09 -7.836397793967373e-11
+  hidden rotation_15 0 -0.9999999999999999 0 0.948997811409165
+  hidden linearVelocity_15 -3.496521976365431e-10 5.322176415781267e-09 -1.441056674879115e-08
+  hidden angularVelocity_15 -1.0072380539263731e-07 -4.971866672578724e-09 -7.837725715228233e-11
+  translation -3.9997416678569038 9.611288017070795e-06 0.1019377703926496
+  rotation -0.025943225721931737 0.9992896850619756 0.027332661192762245 0.0015898577703473606
   controllerArgs [
     ""
   ]
@@ -122,7 +145,7 @@ Youbot {
       height 256
     }
     Lidar {
-      translation 0.28 0 -0.07
+      translation 0.28 0 -0.09
       numberOfLayers 1
     }
     Camera {
@@ -171,4 +194,439 @@ WoodenBox {
   translation -2.27 -1.51 0.15
   name "G"
   size 0.3 0.3 0.3
+}
+Solid {
+  translation -2.5368556893320626 -0.3251354001648359 0.014994114000900704
+  rotation -0.862600402401685 0.4792224457786854 0.16206910019601548 6.435326377857295e-17
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0 1 0
+        roughness 0.8
+        metalness 0
+      }
+      geometry Box {
+        size 0.03 0.03 0.03
+      }
+    }
+  ]
+  name "cube_0"
+  boundingObject Box {
+    size 0.03 0.03 0.03
+  }
+  physics Physics {
+    density -1
+    mass 0.03
+  }
+  recognitionColors [
+    0 1 0
+  ]
+  linearVelocity 9.000182291964085e-18 1.8386156186649755e-17 -1.407555553793197e-11
+  angularVelocity -1.156482317317872e-15 3.854941057726231e-16 2.3802201654121116e-16
+}
+Solid {
+  translation -0.5158413859531841 -0.8796246852190284 0.014994114000900702
+  rotation 0.45551536387103914 -0.5693942048387783 0.6843215565605472 5.416199919095033e-17
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0 0 1
+        roughness 0.8
+        metalness 0
+      }
+      geometry Box {
+        size 0.03 0.03 0.03
+      }
+    }
+  ]
+  name "cube_1"
+  boundingObject Box {
+    size 0.03 0.03 0.03
+  }
+  physics Physics {
+    density -1
+    mass 0.03
+  }
+  recognitionColors [
+    0 0 1
+  ]
+  linearVelocity -1.3530351593983996e-17 1.2097349585430253e-17 -1.4075525930871221e-11
+  angularVelocity -1.92747052886312e-15 -1.1564823173178703e-15 -2.093933563256409e-17
+}
+Solid {
+  translation -2.7762506878788615 -0.7536679082676847 0.014994114000900704
+  rotation -0.862600402401685 0.4792224457786854 0.16206910019601548 6.435326377857295e-17
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0 1 0
+        roughness 0.8
+        metalness 0
+      }
+      geometry Box {
+        size 0.03 0.03 0.03
+      }
+    }
+  ]
+  name "cube_2"
+  boundingObject Box {
+    size 0.03 0.03 0.03
+  }
+  physics Physics {
+    density -1
+    mass 0.03
+  }
+  recognitionColors [
+    0 1 0
+  ]
+  linearVelocity 9.000182291964085e-18 1.8386156186649755e-17 -1.407555553793197e-11
+  angularVelocity -1.156482317317872e-15 3.854941057726231e-16 2.3802201654121116e-16
+}
+Solid {
+  translation -0.6109110297392641 -0.48266962811608094 0.014994114000900702
+  rotation 0.45551536387103914 -0.5693942048387783 0.6843215565605472 5.416199919095033e-17
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 1 0 0
+        roughness 0.8
+        metalness 0
+      }
+      geometry Box {
+        size 0.03 0.03 0.03
+      }
+    }
+  ]
+  name "cube_3"
+  boundingObject Box {
+    size 0.03 0.03 0.03
+  }
+  physics Physics {
+    density -1
+    mass 0.03
+  }
+  recognitionColors [
+    1 0 0
+  ]
+  linearVelocity -1.3530351593983996e-17 1.2097349585430253e-17 -1.4075525930871221e-11
+  angularVelocity -1.92747052886312e-15 -1.1564823173178703e-15 -2.093933563256409e-17
+}
+Solid {
+  translation -1.3828753802410527 -0.2075448454262041 0.014994114000900704
+  rotation 0.8501788114904127 -0.28339293716345415 -0.4437166118803979 4.352900078666583e-17
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0 1 0
+        roughness 0.8
+        metalness 0
+      }
+      geometry Box {
+        size 0.03 0.03 0.03
+      }
+    }
+  ]
+  name "cube_4"
+  boundingObject Box {
+    size 0.03 0.03 0.03
+  }
+  physics Physics {
+    density -1
+    mass 0.03
+  }
+  recognitionColors [
+    0 1 0
+  ]
+  linearVelocity -3.003257345382801e-17 -8.221325208660837e-18 -1.4075525931802638e-11
+  angularVelocity 3.854941057726243e-16 -3.0839528461809905e-15 1.4865984972328116e-16
+}
+Solid {
+  translation -2.967324250467362 -0.1319267764338008 0.014994114000900702
+  rotation -0.9985755458790383 -0.03698427947699876 -0.03845831826729097 1.6677101134814461e-16
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 1 0 0
+        roughness 0.8
+        metalness 0
+      }
+      geometry Box {
+        size 0.03 0.03 0.03
+      }
+    }
+  ]
+  name "cube_5"
+  boundingObject Box {
+    size 0.03 0.03 0.03
+  }
+  physics Physics {
+    density -1
+    mass 0.03
+  }
+  recognitionColors [
+    1 0 0
+  ]
+  linearVelocity -2.2258086315952404e-17 1.867006771196312e-17 -1.4075525931349782e-11
+  angularVelocity -1.927470528863118e-15 -7.709882115452475e-16 9.902062089388811e-18
+}
+Solid {
+  translation -2.912890671915249 0.6490690005833837 0.014994114000900704
+  rotation -0.862600402401685 0.4792224457786854 0.16206910019601548 6.435326377857295e-17
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0 1 0
+        roughness 0.8
+        metalness 0
+      }
+      geometry Box {
+        size 0.03 0.03 0.03
+      }
+    }
+  ]
+  name "cube_6"
+  boundingObject Box {
+    size 0.03 0.03 0.03
+  }
+  physics Physics {
+    density -1
+    mass 0.03
+  }
+  recognitionColors [
+    0 1 0
+  ]
+  linearVelocity 9.000182291964085e-18 1.8386156186649755e-17 -1.407555553793197e-11
+  angularVelocity -1.156482317317872e-15 3.854941057726231e-16 2.3802201654121116e-16
+}
+Solid {
+  translation -0.9939919259723289 0.06352383561241304 0.014994114000900702
+  rotation 0.1337730681235668 0.6242743179099522 -0.7696663837292569 1.383216916277545e-16
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0 1 0
+        roughness 0.8
+        metalness 0
+      }
+      geometry Box {
+        size 0.03 0.03 0.03
+      }
+    }
+  ]
+  name "cube_7"
+  boundingObject Box {
+    size 0.03 0.03 0.03
+  }
+  physics Physics {
+    density -1
+    mass 0.03
+  }
+  recognitionColors [
+    0 1 0
+  ]
+  linearVelocity 1.9254182822747538e-18 -1.4986522175690076e-17 -1.4075555538064638e-11
+  angularVelocity 1.1564823173178735e-15 3.854941057726237e-16 -1.8304298557627652e-17
+}
+Solid {
+  translation 0.13735136748708765 0.7744360376357324 0.014994114000900702
+  rotation -0.7642988288455786 -0.28661206081707785 -0.5776684402141632 6.456014804239084e-17
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0 0 1
+        roughness 0.8
+        metalness 0
+      }
+      geometry Box {
+        size 0.03 0.03 0.03
+      }
+    }
+  ]
+  name "cube_8"
+  boundingObject Box {
+    size 0.03 0.03 0.03
+  }
+  physics Physics {
+    density -1
+    mass 0.03
+  }
+  recognitionColors [
+    0 0 1
+  ]
+  linearVelocity 1.330575258532177e-17 7.245521311510692e-18 -1.4075525930841331e-11
+  angularVelocity -1.1564823173178721e-15 1.9274705288631197e-15 1.6129692528530815e-16
+}
+Solid {
+  translation 1.544123000354606 -0.3466122189628402 0.014994114000900704
+  rotation 0.8501788114904127 -0.28339293716345415 -0.4437166118803979 4.352900078666583e-17
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 1 0 0
+        roughness 0.8
+        metalness 0
+      }
+      geometry Box {
+        size 0.03 0.03 0.03
+      }
+    }
+  ]
+  name "cube_9"
+  boundingObject Box {
+    size 0.03 0.03 0.03
+  }
+  physics Physics {
+    density -1
+    mass 0.03
+  }
+  recognitionColors [
+    1 0 0
+  ]
+  linearVelocity -3.003257345382801e-17 -8.221325208660837e-18 -1.4075525931802638e-11
+  angularVelocity 3.854941057726243e-16 -3.0839528461809905e-15 1.4865984972328116e-16
+}
+Solid {
+  translation -0.5613554774696707 0.46257719568471 0.014994114000900702
+  rotation 0.45551536387103914 -0.5693942048387783 0.6843215565605472 5.416199919095033e-17
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0 1 0
+        roughness 0.8
+        metalness 0
+      }
+      geometry Box {
+        size 0.03 0.03 0.03
+      }
+    }
+  ]
+  name "cube_10"
+  boundingObject Box {
+    size 0.03 0.03 0.03
+  }
+  physics Physics {
+    density -1
+    mass 0.03
+  }
+  recognitionColors [
+    0 1 0
+  ]
+  linearVelocity -1.3530351593983996e-17 1.2097349585430253e-17 -1.4075525930871221e-11
+  angularVelocity -1.92747052886312e-15 -1.1564823173178703e-15 -2.093933563256409e-17
+}
+Solid {
+  translation 1.201364708516433 0.06913355198378679 0.014994114000900702
+  rotation -0.12505683544377796 0.875397848106385 0.4669468871718696 9.864164034656478e-17
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 1 0 0
+        roughness 0.8
+        metalness 0
+      }
+      geometry Box {
+        size 0.03 0.03 0.03
+      }
+    }
+  ]
+  name "cube_11"
+  boundingObject Box {
+    size 0.03 0.03 0.03
+  }
+  physics Physics {
+    density -1
+    mass 0.03
+  }
+  recognitionColors [
+    1 0 0
+  ]
+  linearVelocity 3.301229471522549e-18 -1.4263595433412624e-17 -1.4075555536218563e-11
+  angularVelocity 3.854941057726241e-16 -3.854941057726249e-16 6.318797858847513e-17
+}
+Solid {
+  translation 0.24738093644818537 -0.21063627851139977 0.014994114000900702
+  rotation 0.45551536387103914 -0.5693942048387783 0.6843215565605472 5.416199919095033e-17
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0 0 1
+        roughness 0.8
+        metalness 0
+      }
+      geometry Box {
+        size 0.03 0.03 0.03
+      }
+    }
+  ]
+  name "cube_12"
+  boundingObject Box {
+    size 0.03 0.03 0.03
+  }
+  physics Physics {
+    density -1
+    mass 0.03
+  }
+  recognitionColors [
+    0 0 1
+  ]
+  linearVelocity -1.3530351593983996e-17 1.2097349585430253e-17 -1.4075525930871221e-11
+  angularVelocity -1.92747052886312e-15 -1.1564823173178703e-15 -2.093933563256409e-17
+}
+Solid {
+  translation -1.2148780560803802 0.37656877743534545 0.014994114000900704
+  rotation 0.8501788114904127 -0.28339293716345415 -0.4437166118803979 4.352900078666583e-17
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0 1 0
+        roughness 0.8
+        metalness 0
+      }
+      geometry Box {
+        size 0.03 0.03 0.03
+      }
+    }
+  ]
+  name "cube_13"
+  boundingObject Box {
+    size 0.03 0.03 0.03
+  }
+  physics Physics {
+    density -1
+    mass 0.03
+  }
+  recognitionColors [
+    0 1 0
+  ]
+  linearVelocity -3.003257345382801e-17 -8.221325208660837e-18 -1.4075525931802638e-11
+  angularVelocity 3.854941057726243e-16 -3.0839528461809905e-15 1.4865984972328116e-16
+}
+Solid {
+  translation -2.995367311943854 0.09663630020186842 0.0149941140009007
+  rotation 1.9242856524054775e-14 -0.39302549420080163 -0.9195275748492894 4.7080195432900106e-17
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 1 0 0
+        roughness 0.8
+        metalness 0
+      }
+      geometry Box {
+        size 0.03 0.03 0.03
+      }
+    }
+  ]
+  name "cube_14"
+  boundingObject Box {
+    size 0.03 0.03 0.03
+  }
+  physics Physics {
+    density -1
+    mass 0.03
+  }
+  recognitionColors [
+    1 0 0
+  ]
+  linearVelocity -3.2577297041692365e-18 -4.5289963314513185e-18 -1.4075555536181405e-11
+  angularVelocity 3.854941057726247e-16 -3.854941057726235e-16 -4.048836785755345e-17
 }

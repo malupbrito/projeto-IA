@@ -31,11 +31,6 @@ WHEEL_RADIUS = 0.05
 LX = 0.228  # longitudinal distance from robot's COM to wheel [m]
 LY = 0.158  # lateral distance from robot's COM to wheel [m]
 
-def bound(value, min_val, max_val):
-    """Clamp value between min and max"""
-    return max(min_val, min(max_val, value))
-
-
 class Base:
     """Controls the YouBot mobile base with omnidirectional wheels"""
     
@@ -46,14 +41,13 @@ class Base:
             robot: Webots Robot instance
         """
         self.robot = robot
-        self.time_step = int(robot.getBasicTimeStep())
         
         # Get wheel motors
         self.wheels = [
-            robot.getDevice("wheel1"),
             robot.getDevice("wheel2"),
-            robot.getDevice("wheel3"),
-            robot.getDevice("wheel4")
+            robot.getDevice("wheel1"),
+            robot.getDevice("wheel4"),
+            robot.getDevice("wheel3")
         ]
         
         # Set wheels to velocity control mode
@@ -62,7 +56,7 @@ class Base:
             wheel.setVelocity(0.0)
         
         # Movement state
-        self.vx = 0.0 
+        self.vx = 0.0
         self.vy = 0.0  
         self.omega = 0.0 
         
@@ -72,16 +66,20 @@ class Base:
         Args:
             speeds: list of 4 wheel speeds
         """
+        max_wheel_speed = self.wheels[0].getMaxVelocity() * 0.8
+        max_speed = max(abs(speed) for speed in speeds)
+        if max_speed > max_wheel_speed:
+            speeds = [speed * max_wheel_speed / max_speed for speed in speeds]
         for i in range(4):
             self.wheels[i].setVelocity(speeds[i])
     
     def move(self, vx, vy, omega):
         """Set wheel velocities for omnidirectional movement using proper kinematics"""
         speeds = [0.0] * 4
-        speeds[0] = (1.0 / WHEEL_RADIUS) * (vx - vy - (LX + LY) * omega)  # front-left
-        speeds[1] = (1.0 / WHEEL_RADIUS) * (vx + vy + (LX + LY) * omega)  # front-right
-        speeds[2] = (1.0 / WHEEL_RADIUS) * (vx + vy - (LX + LY) * omega)  # rear-left
-        speeds[3] = (1.0 / WHEEL_RADIUS) * (vx - vy + (LX + LY) * omega)  # rear-right
+        speeds[0] = (1.0 / WHEEL_RADIUS) * (vx + vy - (LX + LY) * omega)  # front-left
+        speeds[1] = (1.0 / WHEEL_RADIUS) * (vx - vy + (LX + LY) * omega)  # front-right
+        speeds[2] = (1.0 / WHEEL_RADIUS) * (vx - vy - (LX + LY) * omega)  # rear-left
+        speeds[3] = (1.0 / WHEEL_RADIUS) * (vx + vy + (LX + LY) * omega)  # rear-right
         
         self._set_wheel_speeds_helper(speeds)
         self.vx = vx
