@@ -1,4 +1,4 @@
-# Projeto YouBot – Coleta e Organização de Cubos no Webots
+# Projeto YouBot – Aprendizagem de máquina no Webots
 
 **Disciplina:** MATA64 – Inteligência Artificial
 **Semestre:** 2025.2
