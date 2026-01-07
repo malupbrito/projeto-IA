@@ -17,6 +17,7 @@ class Estados(Enum):
     PROCURA_CAIXA = 5
     APROXIMA_CAIXA = 6
     SOLTA_CUBO = 7
+    FINAL = 8
 
 class CLASSES(Enum):
     RED_CUBE = 0
@@ -29,7 +30,6 @@ class CLASSES(Enum):
 
 
 TOTAL_CUBOS = 15
-TEMPO_PASSEIO = 12  # segundos
 
 class DetectedObject:
     def __init__(self, d_class, distance, angle, xy_inicial, xy_final, x_normalized, conf):
@@ -70,8 +70,6 @@ class YouBotController:
         self.estado_atual = Estados.INICIAL
         self.contagem_inicial = 0
 
-        self.tempo_passeio = -1.0
-        self.passeio_rtime = 0
 
         self.colors = [
             0xF28D94,  # Light Red
@@ -91,11 +89,9 @@ class YouBotController:
         self.rules_sistema_passeio()
         self.rules_sistema_aprox_cube()
         self.rules_sistema_alinha_cubo()
+        self.rules_sistema_aprox_basket()
 
         # Memory
-        # Passeio
-        self.direction = 1
-        self.passeio_timeout = TEMPO_PASSEIO
         # Aprox Cubo
         self.ato = None
         self.target_cube = None
@@ -107,6 +103,10 @@ class YouBotController:
 
         self.target_b_class = None
         self.target_basket = None
+
+        self.passeio_state = 0
+        self.passeio_time = 1
+        self.passeio_opt = 0
     
     def get_nearest_lidar_point(self):
         nearest_point = min(self.lidar_points, key=lambda p: p[0])
@@ -114,19 +114,16 @@ class YouBotController:
     
     def get_nearest_obs(self):
         obs = None
-        for o in self.detected_objects:
-            if abs(o.angle - self.target_cube.angle) > 0.17:
-                if obs is None or obs.distance > o.distance:
-                    obs = o
-        if obs is None:
-            return (1.0, -0.786)
-
-        return (min(obs.distance, 1.0), obs.angle)
+        for o in [o for o in self.detected_objects if o.d_class == CLASSES.OBSTACLE]:
+            if obs is None or obs.distance > o.distance:
+                obs = o
+        return obs
     
     def init_fuzzy_variables(self):
         self.infPasseio = None
         self.infAproxCube = None
         self.infAlignCube = None
+        self.infAproxBasket = None
 
         self.distTgt = LinguisticVariable("DistanciaTgt", np.arange(0, 1.01, 0.01))
         self.distTgt.add_set(FuzzySet("PERTO", trapezoidal(0.0, 0.0, 0.05, 0.2)))
@@ -167,6 +164,16 @@ class YouBotController:
         self.omegaAproxCube.add_set(FuzzySet("DIREITA", trapezoidal(-1.0, -1.0, -0.5, 0.0)))
         self.omegaAproxCube.add_set(FuzzySet("CENTRO", triangular(-0.5, 0.0, 0.5)))
         self.omegaAproxCube.add_set(FuzzySet("ESQUERDA", trapezoidal(0.0, 0.5, 1.0, 1.0)))
+        
+        self.vxAproxBasket = LinguisticVariable("Vx", np.arange(-1.0, 1.01, 0.01))
+        self.vxAproxBasket.add_set(FuzzySet("NEGATIVO", trapezoidal(-1.0, -1.0, -0.6, 0.0)))
+        self.vxAproxBasket.add_set(FuzzySet("ZERO", triangular(-0.45, 0.0, 0.45)))
+        self.vxAproxBasket.add_set(FuzzySet("POSITIVO", trapezoidal(0.0, 0.5, 1.0, 1.0)))
+
+        self.omegaAproxBasket = LinguisticVariable("Omega", np.arange(-1.0, 1.01, 0.01))
+        self.omegaAproxBasket.add_set(FuzzySet("DIREITA", trapezoidal(-1.0, -1.0, -0.5, 0.0)))
+        self.omegaAproxBasket.add_set(FuzzySet("CENTRO", triangular(-0.5, 0.0, 0.5)))
+        self.omegaAproxBasket.add_set(FuzzySet("ESQUERDA", trapezoidal(0.0, 0.5, 1.0, 1.0)))
 
         self.vxAlignCube = LinguisticVariable("Vx", np.arange(-1.0, 1.01, 0.01))
         self.vxAlignCube.add_set(FuzzySet("NEGATIVO", trapezoidal(-1.0, -1.0, -0.5, 0.0)))
@@ -177,6 +184,11 @@ class YouBotController:
         self.vyAlignCube.add_set(FuzzySet("ESQUERDA", trapezoidal(-1.0, -1.0, -0.5, 0.0)))
         self.vyAlignCube.add_set(FuzzySet("PARA", triangular(-0.5, 0.0, 0.5)))
         self.vyAlignCube.add_set(FuzzySet("DIREITA", trapezoidal(0.0, 0.5, 1.0, 1.0)))
+
+        self.vyAproxBasket = LinguisticVariable("Vy", np.arange(-1.0, 1.01, 0.01))
+        self.vyAproxBasket.add_set(FuzzySet("ESQUERDA", trapezoidal(-1.0, -1.0, -0.6, 0.0)))
+        self.vyAproxBasket.add_set(FuzzySet("PARA", triangular(-0.5, 0.0, 0.5)))
+        self.vyAproxBasket.add_set(FuzzySet("DIREITA", trapezoidal(0.0, 0.6, 1.0, 1.0)))
 
         self.sistemaPasseio = FuzzySystem()
         self.sistemaPasseio.add_variable(self.distObs)
@@ -191,6 +203,15 @@ class YouBotController:
         self.sistemaAproxCube.add_variable(self.angleObs)
         self.sistemaAproxCube.add_variable(self.vxAproxCube)
         self.sistemaAproxCube.add_variable(self.omegaAproxCube)
+
+        self.sistemaAproxBasket = FuzzySystem()
+        self.sistemaAproxBasket.add_variable(self.distTgt)
+        self.sistemaAproxBasket.add_variable(self.angleTgt)
+        self.sistemaAproxBasket.add_variable(self.distObs)
+        self.sistemaAproxBasket.add_variable(self.angleObs)
+        self.sistemaAproxBasket.add_variable(self.vxAproxBasket)
+        self.sistemaAproxBasket.add_variable(self.vyAproxBasket)
+        self.sistemaAproxBasket.add_variable(self.omegaAproxBasket)
 
         self.sistemaAlignCube = FuzzySystem()
         self.sistemaAlignCube.add_variable(self.distTgt)
@@ -237,13 +258,13 @@ class YouBotController:
 
         self.sistemaAproxCube.add_rule(Rule({"DistanciaTgt": "PERTO", "AnguloTgt": "CENTRO"}, { "Omega": "CENTRO"}, operator='AND'))
         self.sistemaAproxCube.add_rule(Rule({"DistanciaTgt": "MEDIO", "AnguloTgt": "CENTRO"}, { "Omega": "CENTRO"}, operator='AND'))
-        self.sistemaAproxCube.add_rule(Rule({"DistanciaTgt": "LONGE", "AnguloTgt": "CENTRO"}, { "Omega": "CENTRO"}))
+        self.sistemaAproxCube.add_rule(Rule({"DistanciaTgt": "LONGE", "AnguloTgt": "CENTRO"}, { "Omega": "CENTRO"}, operator='AND'))
+        self.sistemaAproxCube.add_rule(Rule({"DistanciaTgt": "LONGE", "AnguloTgt": "ESQUERDA"}, { "Omega": "ESQUERDA"}))
+        self.sistemaAproxCube.add_rule(Rule({"DistanciaTgt": "LONGE", "AnguloTgt": "DIREITA"}, { "Omega": "DIREITA"}))
         self.sistemaAproxCube.add_rule(Rule({"DistanciaTgt": "PERTO","AnguloTgt": "ESQUERDA"}, { "Omega": "ESQUERDA"}, operator='AND'))
         self.sistemaAproxCube.add_rule(Rule({"DistanciaTgt": "PERTO","AnguloTgt": "DIREITA"}, { "Omega": "DIREITA"}, operator='AND'))
         self.sistemaAproxCube.add_rule(Rule({"DistanciaTgt": "MEDIO","AnguloTgt": "ESQUERDA"}, { "Omega": "ESQUERDA"}, operator='AND'))
         self.sistemaAproxCube.add_rule(Rule({"DistanciaTgt": "MEDIO","AnguloTgt": "DIREITA"}, { "Omega": "DIREITA"}, operator='AND'))
-        self.sistemaAproxCube.add_rule(Rule({"DistanciaObs": "PERTO", "AnguloTgt": "ESQUERDA"}, { "Omega": "ESQUERDA"}, operator='AND'))
-        self.sistemaAproxCube.add_rule(Rule({"DistanciaObs": "PERTO", "AnguloTgt": "DIREITA"}, { "Omega": "DIREITA"}, operator='AND'))
 
     def rules_sistema_alinha_cubo(self):
         self.sistemaAlignCube.add_rule(Rule({"AnguloTgt": "CENTRO"}, {"Vy": "PARA"}))
@@ -251,6 +272,17 @@ class YouBotController:
         self.sistemaAlignCube.add_rule(Rule({"AnguloTgt": "DIREITA"}, {"Vy": "DIREITA"}))
         self.sistemaAlignCube.add_rule(Rule({"DistanciaTgt": "MEDIO"}, {"Vx": "POSITIVO"}))
         self.sistemaAlignCube.add_rule(Rule({"DistanciaTgt": "PERTO"}, {"Vx": "ZERO"}))
+
+    def rules_sistema_aprox_basket(self):
+        self.sistemaAproxBasket.add_rule(Rule({"AnguloTgt":"CENTRO"}, {"Omega":"CENTRO"}))
+        self.sistemaAproxBasket.add_rule(Rule({"AnguloTgt":"DIREITA"}, {"Omega":"DIREITA"}))
+        self.sistemaAproxBasket.add_rule(Rule({"AnguloTgt":"ESQUERDA"}, {"Omega":"ESQUERDA"}))
+        self.sistemaAproxBasket.add_rule(Rule({"AnguloObs":"ESQUERDA"}, {"Vy":"DIREITA"}))
+        self.sistemaAproxBasket.add_rule(Rule({"AnguloObs":"DIREITA"}, {"Vy":"ESQUERDA"}))
+        self.sistemaAproxBasket.add_rule(Rule({"AnguloObs":"ESQUERDA", "DistanciaObs":"PERTO"}, {"Vy":"DIREITA"}))
+        self.sistemaAproxBasket.add_rule(Rule({"AnguloObs":"DIREITA" , "DistanciaObs":"PERTO"}, {"Vy":"ESQUERDA"}))
+        self.sistemaAproxBasket.add_rule(Rule({"AnguloObs":"ESQUERDA"}, {"Vx":"POSITIVO"}))
+        self.sistemaAproxBasket.add_rule(Rule({"AnguloObs":"DIREITA"}, {"Vx":"POSITIVO"}))
 
     def process_passeio(self):
         p = self.get_nearest_lidar_point()
@@ -308,32 +340,49 @@ class YouBotController:
             defuzzify(self.omegaAproxCube.universe, combined_membership_omega, method="centroid")
         )
     
+    def deadlock_f(self, v):
+        if self.deadlock is None:
+            self.deadlock = 10
+        self.deadlock = (self.deadlock + v)/ 11
+        if(self.deadlock < 0.01):
+            return True
+        return False
+    
     def process_aprox_basket(self):
-        entrada = {"DistanciaTgt": self.target_basket.distance, "AnguloTgt": self.target_basket.angle, "DistanciaObs": 1.0, "AnguloObs": -0.786}
+        obs = self.get_nearest_obs()
+        od = obs.distance if obs else 1
+        oa = obs.angle if obs else -0.768
+        entrada = {"DistanciaTgt": min(1.0, self.target_basket.distance), "AnguloTgt": self.target_basket.angle, "DistanciaObs": od, "AnguloObs": oa}
+        self.infAproxBasket = self.sistemaAproxBasket.infer(entrada)
 
-        self.infAproxCube = self.sistemaAproxCube.infer(entrada)
-
-        combined_membership_vx = np.zeros_like(self.vxAproxCube.universe, dtype=float)
-        combined_membership_omega = np.zeros_like(self.omegaAproxCube.universe, dtype=float)
-        for res in self.infAproxCube:
+        combined_membership_vx = np.zeros_like(self.vxAproxBasket.universe, dtype=float)
+        combined_membership_vy = np.zeros_like(self.vyAproxBasket.universe, dtype=float)
+        combined_membership_omega = np.zeros_like(self.omegaAproxBasket.universe, dtype=float)
+        for res in self.infAproxBasket:
             for var, (set_name, truth_value) in res.items():
                 if var == 'Vx':
-                    set_func = self.vxAproxCube.sets[set_name].func
+                    set_func = self.vxAproxBasket.sets[set_name].func
                     combined_membership_vx = np.maximum(
                         combined_membership_vx,
-                        [min(set_func(x), truth_value) for x in self.vxAproxCube.universe]
+                        [min(set_func(x), truth_value) for x in self.vxAproxBasket.universe]
+                    )
+                elif var == 'Vy':
+                    set_func = self.vyAproxBasket.sets[set_name].func
+                    combined_membership_vy = np.maximum(
+                        combined_membership_vy,
+                        [min(set_func(x), truth_value) for x in self.vyAproxBasket.universe]
                     )
                 else:
-                    set_func = self.omegaAproxCube.sets[set_name].func
+                    set_func = self.omegaAproxBasket.sets[set_name].func
                     combined_membership_omega = np.maximum(
                         combined_membership_omega,
-                        [min(set_func(x), truth_value) for x in self.omegaAproxCube.universe]
+                        [min(set_func(x), truth_value) for x in self.omegaAproxBasket.universe]
                     )
 
         return (
-            defuzzify(self.vxAproxCube.universe, combined_membership_vx, method="centroid"),
-            0.0,
-            defuzzify(self.omegaAproxCube.universe, combined_membership_omega, method="centroid")
+            defuzzify(self.vxAproxBasket.universe, combined_membership_vx, method="centroid"),
+            defuzzify(self.vyAproxBasket.universe, combined_membership_vy, method="centroid"),
+            defuzzify(self.omegaAproxBasket.universe, combined_membership_omega, method="centroid")
         )
 
     def processa_alinha_cubo(self):
@@ -431,6 +480,10 @@ class YouBotController:
                 pass
             case Estados.PROCURA_CAIXA:
                 return str(self.target_b_class)
+            case Estados.APROXIMA_CAIXA:
+                if self.infAproxBasket:
+                    return f"Dist: {self.target_basket.distance:.2f} Ang: {self.target_basket.angle:.2f}\n" +\
+                "\n".join([str(v) for v in self.infAproxBasket])
         return " "
     
     def display_overlays(self):
@@ -475,19 +528,30 @@ class YouBotController:
         return math.degrees(self.calcular_angulo_rad(x, fov))
         
     def passeio(self):
-        if self.passeio_timeout < 0:
-            self.passeio_timeout = TEMPO_PASSEIO
-            self.passeio_rtime = np.random.random() * 3
-            self.direction = np.random.choice([-1, 1])
+        vx, vy, omega = self.process_passeio()
+        if self.passeio_state == 0:
+            print(1)
+            self.base.move(1, 0, 0)
+            self.passeio_time -= self.time_step / 1000.0
+            if int(self.passeio_time) <= 0:
+                self.passeio_state = 1
+                self.passeio_time = 4
+        elif self.passeio_state == 1:
+            self.base.move(0, 0, np.pi/4 )
+            self.passeio_time -= self.time_step / 1000.0
+            print(1)
+            if int(self.passeio_time) <= 0:
+                self.passeio_state = 2
+                self.passeio_time = 4
+                self.passeio_opt = 3
+        
+        elif self.passeio_state == 2:
+            print(2)
+            self.passeio_time -= self.time_step / 1000.0
+            if int(self.passeio_time) <= 0:
+                self.passeio_state = 0
+                self.passeio_time = self.passeio_opt
 
-        if self.passeio_rtime > 0.0:
-            self.passeio_rtime -= self.time_step / 1000.0
-            self.base.move(0.0, 0.0, math.pi/4*self.direction)
-        else:
-            self.passeio_timeout -= self.time_step / 1000.0
-            vx, vy, omega = self.process_passeio()
-            self.base.move(vx * 0.3, vy, omega)
-            self.passeio_timeout -= self.time_step / 1000.0
             
 
     def aprox(self):
@@ -498,9 +562,10 @@ class YouBotController:
         self.base.move(vx * 0.5, vy, omega * 0.7)
 
     def aprox_basket(self):
+        self.find_basket()
         vx, vy, omega = self.process_aprox_basket()
 
-        self.base.move(vx * 0.5, vy, omega * 0.7)
+        self.base.move(vx * 0.6, vy*0.2, omega * 0.7)
 
     def cube_timeout(self):
         
@@ -534,7 +599,7 @@ class YouBotController:
             return True
         return False
 
-    def find_basket(self, cube):
+    def find_basket(self):
         if self.target_b_class is None:
             self.target_b_class = CLASSES(self.target_cube.d_class.value + 3)
         for ob in self.detected_objects:
@@ -638,10 +703,9 @@ class YouBotController:
             
     def change_state(self, state):
         self.estado_atual = state
-        print(self.estado_atual)
         self.base.reset()
     
-    def couter(self):
+    def counter(self):
         self.contagem_inicial +=1
         if self.contagem_inicial >= 15:
             return True
@@ -687,17 +751,19 @@ class YouBotController:
                     self.change_state(Estados.PROCURA_CAIXA)
             elif self.estado_atual == Estados.PROCURA_CAIXA:
                 self.passeio()
-                if self.find_basket(self.target_cube):
+                print([x.d_class for x in self.detected_objects])
+                if self.find_basket():
                     self.change_state(Estados.APROXIMA_CAIXA)
             elif self.estado_atual == Estados.APROXIMA_CAIXA:
-                self.aprox()
-                self.change_state = Estados.SOLTA_CUBO
+                self.aprox_basket()
+                if self.target_basket.distance <= 0.1:
+                    self.change_state(Estados.SOLTA_CUBO)
             elif self.estado_atual == Estados.SOLTA_CUBO:
-                self.soltar_cubo()
-                if self.counter():
-                    self.change_state(Estados.FINAL)
-                else:
-                    self.change_state(Estados.PROCURA_CUBO)
+                if self.soltar_cubo():
+                    if self.counter():
+                        self.change_state(Estados.FINAL)
+                    else:
+                        self.change_state(Estados.PROCURA_CUBO)
             elif self.estado_atual == Estados.FINAL:
                 print("Missão Cumprida! O robô venceu.")
 
