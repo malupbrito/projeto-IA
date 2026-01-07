@@ -248,37 +248,40 @@ class Arm:
         return 0.0
     
     def inverse_kinematics(self, x, y, z):
-        x = max(-0.35, min(0.35, x))
-        y = max(0.18, min(0.45, y))   
-        z = max(0.02, min(0.25, z))   
-
+        """Set arm position using inverse kinematics
+        
+        Args:
+            x: target x position in meters
+            y: target y position in meters
+            z: target z position in meters
+        """
+        # Calculate intermediate values
         y1 = math.sqrt(x * x + y * y)
         z1 = z + self.get_sub_arm_length(3) + self.get_sub_arm_length(4) - self.get_sub_arm_length(0)
-
+        
         a = self.get_sub_arm_length(1)
         b = self.get_sub_arm_length(2)
         c = math.sqrt(y1 * y1 + z1 * z1)
-
-        if c > (a + b) or c < abs(a - b):
-            return False
-
-        alpha = math.atan2(x, y)
-
-        cos_beta = (a * a + c * c - b * b) / (2 * a * c)
-        cos_beta = max(-1.0, min(1.0, cos_beta))
-        beta = -(math.pi / 2 - math.acos(cos_beta) - math.atan2(z1, y1))
-
-        cos_gamma = (a * a + b * b - c * c) / (2 * a * b)
-        cos_gamma = max(-1.0, min(1.0, cos_gamma))
-        gamma = -(math.pi - math.acos(cos_gamma))
-
-        delta = -(math.pi + beta + gamma)
+        
+        # Calculate joint angles
+        alpha = -math.asin(x / y1) if y1 != 0 else 0.0
+        
+        # Law of cosines for beta
+        cos_beta_part = (a * a + c * c - b * b) / (2.0 * a * c)
+        cos_beta_part = max(-1.0, min(1.0, cos_beta_part))  # Clamp to valid range
+        beta = -(math.pi / 2 - math.acos(cos_beta_part) - math.atan2(z1, y1))
+        
+        # Law of cosines for gamma
+        cos_gamma_part = (a * a + b * b - c * c) / (2.0 * a * b)
+        cos_gamma_part = max(-1.0, min(1.0, cos_gamma_part))  # Clamp to valid range
+        gamma = -(math.pi - math.acos(cos_gamma_part))
+        
+        delta = -(math.pi + (beta + gamma))
         epsilon = math.pi / 2 + alpha
-
+        
+        # Set motor positions
         self.motors[0].setPosition(alpha)
         self.motors[1].setPosition(beta)
         self.motors[2].setPosition(gamma)
         self.motors[3].setPosition(delta)
         self.motors[4].setPosition(epsilon)
-
-        return True
