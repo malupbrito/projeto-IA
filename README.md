@@ -1,77 +1,80 @@
-#Projeto YouBot – Aprendizagem de máquina no Webots
+# Projeto YouBot – Coleta e Organização de Cubos no Webots
 
-##Componentes do Grupo
+**Disciplina:** MATA64 – Inteligência Artificial
+**Semestre:** 2025.2
+
+---
+
+##  Componentes do Grupo
 
 * **Malu Brito**
 * **Rodrigo Queiroz**
 
-##Disciplina: MATA64 – Inteligência Artificial
 ---
 
-##Objetivo do Projeto
+##  Objetivo do Projeto
 
-Este projeto tem como objetivo equipar o robô terrestre **YouBot**, no simulador **Webots**, para realizar a tarefa de **coletar 15 cubos coloridos** (verde, azul e vermelho) distribuídos aleatoriamente pela arena e **depositá-los nas caixas de cor correspondente**, evitando obstáculos durante toda a navegação.
+Este projeto tem como objetivo equipar o robô terrestre **YouBot**, no simulador **Webots**, para coletar **15 cubos coloridos** (verde, azul e vermelho) distribuídos aleatoriamente pela arena e depositá-los nas **caixas de cor correspondente**, evitando obstáculos durante toda a navegação.
 
 ---
 
-### 1. Requisitos
+## 📌 Requisitos
 
-* Webots (versão compatível com o projeto base)
+* Webots (versão compatível com o projeto base fornecido)
 * Python 3.x
 
-###  2. Instalar Dependências
+---
 
-Antes de executar, é necessário instalar as bibliotecas utilizadas:
+##  Instalação de Dependências
+
+Antes de executar o projeto, instale as bibliotecas necessárias:
 
 ```bash
 pip install ultralytics
-```
-
-```bash
 pip install numpy
 ```
 
 ---
-* Versão do Python
-* Dependências instaladas
 
----
-
-## Abordagem Utilizada
+##  Abordagem Utilizada
 
 O sistema de controle do robô combina duas técnicas principais de Inteligência Artificial:
 
-### 1. Rede Neural (YOLO)
+### 1. Rede Neural – YOLO
 
 Foi utilizado um modelo **YOLO (You Only Look Once)** para:
 
-* Detectar cubos coloridos
-* Identificar a cor dos cubos
+* Detectar cubos na imagem da câmera
+* Identificar a **cor dos cubos** (verde, azul ou vermelho)
 * Auxiliar na identificação das caixas de destino
 
-O modelo realiza a detecção por meio da **câmera RGB** do robô.
+A detecção é feita a partir da **câmera RGB** do robô.
 
 ### 2. Lógica Fuzzy
 
-A lógica fuzzy é responsável pelo **controle de navegação do robô**, incluindo:
+A lógica fuzzy é responsável pelo controle de navegação do robô, incluindo:
 
 * Aproximação do alvo
 * Correção de alinhamento
 * Controle de velocidade
 * Desvio de obstáculos
 
+As decisões de movimento são obtidas por meio de **regras fuzzy** e defuzzificação por média ponderada.
+
 ---
 
-## Sensores Utilizados
+##  Sensores Utilizados
 
-O robô utiliza exclusivamente:
+O robô utiliza exclusivamente os seguintes sensores:
 
-*  **LIDAR**:
+### 🔹 LIDAR
 
-  * Detecção de obstáculos
-  * Segmentação de objetos
-  * Estimativa de distância
+* Detecção de obstáculos
+* Segmentação de objetos
+* Estimativa de distância
 
-  * **Câmera RGB**:
+### 🔹 Câmera RGB
 
-  * Detecção e classificação de cubos por cor via YOLO
+* Detecção e classificação de cubos por cor via YOLO
+
+
